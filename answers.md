@@ -32,7 +32,7 @@ Huffman coding is consistently more efficient than fixed-length coding, all the 
 Approch: Treat the array A[1…n] as an almost complete binary tree (children of i are 2i and 2i+1)
         Then run “sift-down" from every internal node.
 
-'''
+```python
 
 def build_min_heap(A):
     n = len(A) - 1           # using 
@@ -52,8 +52,7 @@ def sift_down(A, i, n):
         else:
             break
 
-
-'''
+```
 
 This approch preserves O(n) due to Node i is at height h(i) (distance to a leaf). A sift_down from i costs Θ(h(i))
 
@@ -73,13 +72,15 @@ $$\sum_{h=1}^{logn} O(h) = O((logn)^2)$$
 
 For denominations that are powers of 2 (1, 2, 4, 8, …, 2^k), the greedy algorithm is:
 
-function make_change(N):
+```python
+def make_change(N):
     coins = []
     while N > 0:
         largest = 2^⌊log2(N)⌋ # largest power of 2 ≤ N
         coins.append(largest)
         N = N - largest
     return coins
+```
 
 Intuition: At each step, choose the largest coin denomination (2^i) that does not exceed the remaining amount. Repeat until the remaining value becomes zero.
 
@@ -112,15 +113,50 @@ Thus, the greedy algorithm effectively constructs the binary representation of N
 
 - **4a.**
 
+Providing a counter example where our already devised algorithm fail in Fortuito,
+
+Let the denominations be `{1, 3, 4}` and let `N = 6`.  
+The greedy approach takes the largest coin ≤ 6, i.e., `4`, leaving `2`, then uses `1 + 1` → **3 coins** (`4+1+1`).  
+But the optimal solution uses **2 coins**: `3 + 3`.  
+
+Therefore, the greedy choice is not always optimal for arbitrary denominations.
 
 
 - **4b.**
+
+Optimal substructure property
+
+Suppose we have an optimal solution `S` for `N` whose last coin is `dj`, and suppose (for contradiction) that the multiset of coins `S'` used to sum to `N − dj` is *not* optimal for `N − dj`. Then there exists another solution `T` for `N − dj` using fewer coins than `S'`. Replacing `S'` in `S` by `T` yields a solution for `N` with fewer coins than `S`, contradicting the optimality of `S`. Hence `S'` must be optimal.  
+
+This proves the problem has **optimal substructure** enven when it doesnt have greedy choice property.
 
 
 
 
 - **4c.**
 
+The subproblem: `OPT(x) = min_{dj ≤ x} (1 + OPT(x − dj))`, with `OPT(0) = 0` and `OPT(x) = +∞` if no coin fits.
+
+**Bottom-up DP :**
+
+```python
+def min_coins(D, N):
+    INF = 10**9
+    dp = [INF] * (N + 1)
+    dp[0] = 0
+    for x in range(1, N + 1):
+        best = INF
+        for d in D:
+            if d <= x and dp[x - d] + 1 < best:
+                best = dp[x - d] + 1
+        dp[x] = best
+    return dp[N] if dp[N] < INF else None
+
+```
+Work: Θ(kN) in the worst case for both versions (k = |D|).
+
+Span: with the straightforward order (filling x = 1…N), each state depends on smaller x, so the span is Θ(N). 
+    If we parallelize the inner min across the k coins, per-state reduction takes Θ(log k) span, so total span is Θ(N + log k).
 
 - **5a.**
 
