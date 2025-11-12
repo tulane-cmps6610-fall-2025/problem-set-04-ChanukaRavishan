@@ -160,6 +160,30 @@ Span: with the straightforward order (filling x = 1…N), each state depends on 
 
 - **5a.**
 
+We have tasks `a_i = (s_i, f_i, v_i)` and want a maximum-value subset of **non-overlapping** tasks.
+
+Yes, the optimal substructure property holds
+
+Let `OPT(t)` be the maximum value achievable using only tasks that finish at or before time `t`.  
+
+then Sorting tasks by non decreasing finish time: `f_1 ≤ f_2 ≤ … ≤ f_n`.  
+
+For task `i`, we can define `p(i)` as the largest index `< i` with `f_{p(i)} ≤ s_i`.
+
+we need to prove, In an optimal solution for the prefix `1..i`, either task `i` is excluded, or it is included and the remaining tasks must be an optimal solution for `1..p(i)`.
+
+Proof
+
+Suppose an optimal solution for `1..i` includes task `i`. Any other included task must end by `s_i`, hence must be among `1..p(i)`. If those tasks were not optimal for `1..p(i)`, we could replace them with a better solution for `1..p(i)`, increasing the total—contradiction. If the optimal solution excludes `i`, its value is exactly `OPT(i-1)`. ∎
+
+This yields the recurrence:
+
+\[
+
+OPT(i) \;=\; \max\big( v_i + OPT(p(i)),\; OPT(i-1) \big), \qquad OPT(0)=0 .
+
+\]
+
 
 
 - **5b.**
@@ -168,3 +192,44 @@ Span: with the straightforward order (filling x = 1…N), each state depends on 
 
 
 - **5c.**
+
+
+**Bottom-up algorithm.**
+
+1. Sort tasks by `f_i`.
+2. Pre compute `p(i)` for each `i` by binary searching on the `f`’s.
+3. Fill `OPT[0..n]` with the recurrence; keep `choice[i]` to reconstruct the set.
+
+```python
+
+
+def weighted_interval_scheduling(tasks):
+
+    # tasks: list of (s, f, v)
+
+    # considering finish time
+    tasks = sorted(tasks, key=lambda x: x[1])
+    s = [0] + [t[0] for t in tasks]
+    f = [0] + [t[1] for t in tasks]
+    v = [0] + [t[2] for t in tasks]
+    n = len(tasks)
+
+    # array p(i)   
+    finishes = f[:]  # thid is already sorted
+    p = [0]*(n+1)
+    for i in range(1, n+1):
+        # rightmost j<i with f_j <= s_i
+        j = bisect_right(finishes, s[i], 0, i) - 1
+        p[i] = j
+
+    # DP
+    OPT = [0]*(n+1)
+    take = [False]*(n+1)
+    for i in range(1, n+1):
+        take_val = v[i] + OPT[p[i]]
+        skip_val = OPT[i-1]
+        if take_val > skip_val:
+            OPT[i] = take_val
+            take[i] = True
+        else:
+            OPT[i] = skip_val
